@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -53,7 +54,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
         <div className="flex items-center justify-between w-full">
           {!isCollapsed && (
             <div className="flex items-center w-full justify-center">
-              <img src="/src/images/logosa2hub.png" alt="Logo HubSA2" className="w-full h-full object-contain" />
+              <img src="/images/logosa2hub.png" alt="Logo HubSA2" className="w-full h-full object-contain" />
             </div>
           )}
           <Button
