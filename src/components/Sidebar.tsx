@@ -135,13 +135,15 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
         )}
         
         {/* Divisor */}
-        <Separator className="my-2" />
+        {!isCollapsed && <Separator className="my-2" />}
         
         {/* Rodapé customizado */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2">
-          <p>Agência SA2Marketing©</p>
-          <p>Versão: BetaV1</p>
-        </div>
+        {!isCollapsed && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2">
+            <p>Agência SA2Marketing©</p>
+            <p>Versão: BetaV1</p>
+          </div>
+        )}
       </div>
     </div>
   );
