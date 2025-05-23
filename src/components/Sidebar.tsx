@@ -52,11 +52,6 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       {/* Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between w-full">
-          {!isCollapsed && (
-            <div className="flex items-center w-full justify-center">
-              <img src="/images/logosa2hub.png" alt="Logo HubSA2" className="w-full h-full object-contain" />
-            </div>
-          )}
           <Button
             variant="ghost"
             size="sm"

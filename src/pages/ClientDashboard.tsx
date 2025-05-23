@@ -95,9 +95,6 @@ const ClientDashboard = () => {
             Acompanhe suas solicitações e compromissos
           </p>
         </div>
-        <Button className="bg-primary-500 hover:bg-primary-600 text-white">
-          Nova Solicitação
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

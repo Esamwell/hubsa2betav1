@@ -26,20 +26,15 @@ const Topbar = ({ onSidebarToggle }: TopbarProps) => {
 
   return (
     <header className="flex items-center justify-between h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4">
-      {/* Esquerda: Logo e Botão para mobile sidebar toggle */}
-      <div className="flex items-center space-x-2">
-        {/* Botão para mobile sidebar toggle - visível apenas em telas pequenas */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSidebarToggle}
-          className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          <Menu className="w-4 h-4" />
-        </Button>
-        {/* Logo - visível em telas grandes, e também em mobile */}
-        <img src="/images/logosa2hub.png" alt="Logo HubSA2" className="h-8 w-auto" />
-      </div>
+      {/* Botão para mobile sidebar toggle - visível apenas em telas pequenas */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onSidebarToggle}
+        className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
+      >
+        <Menu className="w-4 h-4" />
+      </Button>
 
       {/* Espaço flexível para empurrar itens para a direita */}
       <div className="flex-grow"></div>
@@ -80,4 +75,4 @@ const Topbar = ({ onSidebarToggle }: TopbarProps) => {
   );
 };
 
-export default Topbar; 
+export default Topbar;
