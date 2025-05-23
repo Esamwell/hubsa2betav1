@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# ✨ Hubsa2 ✨
 
-## Project info
+## 📖 Descrição
 
-**URL**: https://lovable.dev/projects/615b85af-d365-4337-83ae-e6eccd423eae
+Bem-vindo ao Hubsa2! 🎉 Este projeto é um sistema completo para gerenciar solicitações de forma eficiente, oferecendo interfaces intuitivas tanto para clientes quanto para administradores. Com o Hubsa2, você pode facilmente visualizar, criar e acompanhar o status das solicitações do início ao fim. 🚀
 
-## How can I edit this code?
+## 💻 Tecnologias Utilizadas
 
-There are several ways of editing your application.
+Este projeto foi desenvolvido utilizando as seguintes tecnologias:
 
-**Use Lovable**
+*   ⚛️ React
+*   ➡️ Next.js
+*   📝 TypeScript
+*   🎨 Tailwind CSS
+*   ☁️ Supabase (para persistência de dados e autenticação segura)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/615b85af-d365-4337-83ae-e6eccd423eae) and start prompting.
+## ⚙️ Instalação
 
-Changes made via Lovable will be committed automatically to this repo.
+Siga estes passos para configurar e rodar o Hubsa2 no seu ambiente local:
 
-**Use your preferred IDE**
+1.  Clone o repositório para a sua máquina:
+    ```bash
+    git clone <URL_DO_SEU_REPOSITORIO>
+    cd <pasta_do_seu_projeto>
+    ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2.  Instale as dependências do projeto:
+    ```bash
+    npm install
+    # ou, se preferir usar yarn:
+    # yarn install
+    ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+3.  Configure as variáveis de ambiente essenciais:
+    Crie um arquivo chamado `.env.local` na pasta raiz do projeto e adicione suas chaves do Supabase (substitua os placeholders pelos seus valores reais):
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=SUA_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=SUA_SUPABASE_ANON_KEY
+    ```
 
-Follow these steps:
+4.  Prepare seu banco de dados Supabase:
+    Assegure-se de que a estrutura do banco de dados esteja pronta, incluindo as tabelas `requests`, `clients`, `users` e `request_comments` (verifique se a tabela de comentários ainda é relevante para o DB, mesmo após a remoção da UI). É crucial configurar as políticas de segurança (Row Level Security - RLS) corretamente para garantir que as operações de dados respeitem as permissões dos usuários.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## ▶️ Como Executar (Desenvolvimento Local)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Para iniciar a aplicação em modo de desenvolvimento, execute o comando:
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
+# ou:
+# yarn dev
 ```
 
-**Edit a file directly in GitHub**
+A aplicação estará disponível no seu navegador através do endereço `http://localhost:3000` (ou a porta configurada, se for diferente). Alterações no código serão automaticamente recarregadas.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## ☁️ Deploy em VPS
 
-**Use GitHub Codespaces**
+Para fazer o deploy da aplicação em um servidor VPS, siga estes passos:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1.  **Construir a aplicação para produção:**
+    No ambiente de produção (ou localmente antes de enviar para o VPS), execute o comando de build:
+    ```bash
+    npm run build
+    # ou:
+    # yarn build
+    ```
+    Este comando criará uma pasta `.next` (ou similar) com a versão otimizada para produção.
 
-## What technologies are used for this project?
+2.  **Transferir os arquivos para o VPS:**
+    Copie os arquivos do projeto (incluindo a pasta `.next` gerada e o arquivo `.env.local` com as variáveis de ambiente de produção) para o seu servidor VPS. Você pode usar `scp` ou `rsync` para isso.
 
-This project is built with:
+3.  **Instalar dependências no VPS:**
+    No terminal do VPS, navegue até a pasta do projeto e instale as dependências (ignorando `devDependencies` para um ambiente de produção mais limpo):
+    ```bash
+    npm install --production
+    # ou:
+    # yarn install --production
+    ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4.  **Configurar variáveis de ambiente no VPS:**
+    Certifique-se de que o arquivo `.env.local` (ou o método que você usa para gerenciar variáveis de ambiente no seu servidor, como variáveis de ambiente do sistema) esteja configurado corretamente com as chaves do Supabase e outras variáveis necessárias para o ambiente de produção.
 
-## How can I deploy this project?
+5.  **Executar a aplicação em produção:**
+    Use um gerenciador de processos como o PM2 para manter a aplicação rodando de forma confiável em segundo plano. Primeiro, instale o PM2 globalmente (se ainda não tiver):
+    ```bash
+    npm install -g pm2
+    # ou:
+    # yarn global add pm2
+    ```
+    Depois, inicie a aplicação:
+    ```bash
+    pm2 start npm --name "hubsa2" -- run start
+    # ou:
+    # pm2 start yarn --name "hubsa2" -- run start
+    ```
+    (`--name "hubsa2"` define um nome para o processo do PM2, facilitando o gerenciamento).
 
-Simply open [Lovable](https://lovable.dev/projects/615b85af-d365-4337-83ae-e6eccd423eae) and click on Share -> Publish.
+6.  **Configurar um proxy reverso (Recomendado):**
+    Use um servidor web como Nginx ou Apache para atuar como proxy reverso para a aplicação Node.js rodando com PM2. Isso permite configurar um nome de domínio, gerenciar certificados SSL e servir arquivos estáticos de forma mais eficiente. (As instruções de configuração de Nginx/Apache variam e não estão detalhadas aqui).
 
-## Can I connect a custom domain to my Lovable project?
+Lembre-se de adaptar os caminhos e comandos conforme a sua configuração específica do VPS e o método de deploy.
 
-Yes, you can!
+## 📝 Uso
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Explore as funcionalidades do Hubsa2:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+*   **Página de Solicitações:** Visualize todas as solicitações (administradores) ou apenas as suas (clientes). 📊
+*   **Detalhes da Solicitação:** Veja informações detalhadas e edite solicitações específicas (as permissões de edição dependem do seu perfil). 🔍
+*   **Nova Solicitação:** Crie novas solicitações para iniciar o processo de trabalho. ✨
+
+*(Por favor, ajuste as seções de Uso e Instalação conforme as particularidades e rotas específicas do seu projeto.)*
