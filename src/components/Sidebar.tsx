@@ -58,7 +58,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               <img
                 src="/images/logosa2hub.png"
                 alt="Logo SA2Hub"
-                className="h-8 w-auto"
+                className="h-12 w-auto"
               />
             </Link>
           )}
@@ -66,7 +66,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             variant="ghost"
             size="sm"
             onClick={onToggle}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden"
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <Menu className="w-4 h-4" />
           </Button>
