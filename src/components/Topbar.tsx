@@ -1,13 +1,18 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Mail, ChevronDown } from 'lucide-react';
+import { Mail, ChevronDown, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 
-const Topbar = () => {
+interface TopbarProps {
+  onSidebarToggle: () => void;
+}
+
+const Topbar = ({ onSidebarToggle }: TopbarProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -20,7 +25,20 @@ const Topbar = () => {
   };
 
   return (
-    <header className="flex items-center justify-end h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4">
+    <header className="flex items-center justify-between h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4">
+      {/* Botão para mobile sidebar toggle */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onSidebarToggle}
+        className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800"
+      >
+        <Menu className="w-4 h-4" />
+      </Button>
+
+      {/* Espaço flexível para empurrar itens para a direita em mobile */}
+      <div className="flex-grow lg:flex-grow-0"></div>
+
       {/* Ícones de Mensagem */}
       <div className="flex items-center space-x-4 mr-6">
         <Mail className="h-5 w-5 text-gray-600 dark:text-gray-400 cursor-pointer" />
