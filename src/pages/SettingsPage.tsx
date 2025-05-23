@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Settings } from 'lucide-react';
@@ -10,12 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
+import bcrypt from 'bcryptjs';
+import { supabase } from '@/integrations/supabase/client';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 const SettingsPage = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { toast } = useToast();
   
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -50,44 +55,151 @@ const SettingsPage = () => {
     setSecurity(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSaveProfile = () => {
-    toast({
-      title: "Perfil atualizado",
-      description: "Suas informações foram salvas com sucesso.",
-    });
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+
+      // Buscar dados básicos do usuário na tabela users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email, role, client_id')
+        .eq('id', user.id)
+        .single();
+
+      if (userError) {
+        console.error('Erro ao buscar perfil do usuário:', userError);
+        toast({ title: 'Erro', description: 'Não foi possível carregar seu perfil.', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      let profileData: any = {
+        name: userData?.name || '',
+        email: userData?.email || '',
+        company: '', // Inicializar
+        phone: '', // Inicializar
+      };
+
+      // Se for admin, usar valores padrão
+      if (userData?.role === 'admin') {
+        profileData.company = 'AGENCIA SA2 MARKETING';
+        profileData.phone = '75992299443';
+      } else if (userData?.role === 'client' && userData.client_id) {
+        // Se for cliente, buscar dados adicionais da tabela clients
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('company, phone')
+          .eq('id', userData.client_id)
+          .single();
+
+        if (clientError) {
+          console.error('Erro ao buscar dados do cliente:', clientError);
+          toast({ title: 'Erro', description: 'Não foi possível carregar os dados do cliente.', variant: 'destructive' });
+          setLoading(false);
+          return;
+        } else if (clientData) {
+          profileData.company = clientData.company || '';
+          profileData.phone = clientData.phone || '';
+        }
+      }
+
+      setProfile(profileData);
+      setLoading(false);
+    };
+    fetchUserProfile();
+  }, [user, toast]);
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const updateData: any = {
+        name: profile.name,
+      };
+      // Só permite alterar email se não for cliente (cliente email é vinculado)
+      if (user.role !== 'client') {
+        updateData.email = profile.email;
+      }
+      
+      const { error: userUpdateError } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', user.id);
+      if (userUpdateError) throw userUpdateError;
+
+      // Atualizar o estado do usuário no contexto AuthContext e localStorage
+      // com os dados mais recentes do perfil
+      updateUser({ name: profile.name, email: profile.email });
+
+      // Atualizar company e phone apenas se for cliente
+      if (user.role === 'client' && user.client_id) {
+        const { error: clientUpdateError } = await supabase
+          .from('clients')
+          .update({
+            company: profile.company,
+            phone: profile.phone,
+          })
+          .eq('id', user.client_id);
+        if (clientUpdateError) throw clientUpdateError;
+      }
+
+      toast({ title: 'Perfil atualizado', description: 'Suas informações foram salvas com sucesso.' });
+    } catch (error: any) {
+      console.error('Erro ao salvar perfil:', error);
+      toast({ title: 'Erro', description: error.message || 'Não foi possível salvar o perfil.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const handleSavePassword = () => {
+
+  const handleSavePassword = async () => {
+    if (!user?.id) return;
     if (security.newPassword !== security.confirmPassword) {
       toast({
-        title: "Erro",
-        description: "As senhas não conferem.",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'As senhas não conferem.',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     if (!security.currentPassword || !security.newPassword) {
       toast({
-        title: "Erro",
-        description: "Todos os campos são obrigatórios.",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Por favor, preencha os campos de senha atual e nova senha.',
+        variant: 'destructive',
       });
       return;
     }
-    
-    toast({
-      title: "Senha atualizada",
-      description: "Sua senha foi alterada com sucesso.",
-    });
-    
-    setSecurity({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
+
+    setLoading(true);
+    try {
+      const passwordHash = await bcrypt.hash(security.newPassword, 10);
+      const { error } = await supabase
+        .from('users')
+        .update({ password: passwordHash })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Senha atualizada', description: 'Sua senha foi alterada com sucesso.' });
+      setSecurity({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar senha:', error);
+      toast({ title: 'Erro', description: error.message || 'Não foi possível atualizar a senha.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   return (
     <div className="p-6 space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -173,7 +285,7 @@ const SettingsPage = () => {
         {/* Notification Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Notificações</CardTitle>
+            <CardTitle>Notificações - EM DESENVOLVIMENTO</CardTitle>
             <CardDescription>
               Configure como você deseja receber notificações
             </CardDescription>

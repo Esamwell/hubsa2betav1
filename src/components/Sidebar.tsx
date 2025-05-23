@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,10 +9,13 @@ import {
   Moon, 
   Sun, 
   User,
-  Settings
+  Settings,
+  Bell as BellIcon,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -34,7 +36,6 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
   const clientMenuItems = [
     { title: 'Dashboard', path: '/client', icon: Calendar },
-    { title: 'Clientes', path: '/client/clients', icon: User },
     { title: 'Solicitações', path: '/client/requests', icon: Bell },
     { title: 'Calendário', path: '/client/calendar', icon: Calendar },
     { title: 'Configurações', path: '/client/settings', icon: Settings }
@@ -48,14 +49,11 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between w-full">
           {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
-              </div>
-              <span className="font-bold text-xl text-gray-800 dark:text-white">HubSA2</span>
+            <div className="flex items-center w-full justify-center">
+              <img src="/src/images/logosa2hub.png" alt="Logo HubSA2" className="w-full h-full object-contain" />
             </div>
           )}
           <Button
@@ -75,12 +73,14 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === '/admin' || item.path === '/client'}
             className={({ isActive }) =>
               cn(
-                "flex items-center space-x-3 p-3 rounded-lg transition-colors",
+                "flex items-center rounded-lg transition-colors",
+                isCollapsed ? "p-2 justify-center" : "space-x-3 p-3",
                 "hover:bg-primary-50 dark:hover:bg-gray-800",
-                isActive 
-                  ? "bg-primary-500 text-white" 
+                isActive
+                  ? "bg-primary-500 text-white"
                   : "text-gray-600 dark:text-gray-300"
               )
             }
@@ -92,33 +92,50 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleTheme}
-          className="w-full justify-start hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          {!isCollapsed && <span className="ml-3">Tema {isDark ? 'Claro' : 'Escuro'}</span>}
-        </Button>
-        
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         {!isCollapsed && (
-          <div className="pt-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              <p className="font-medium">{user?.name}</p>
-              <p className="text-xs">{user?.role === 'admin' ? 'Administrador' : 'Cliente'}</p>
+          <div className="space-y-2 pb-4">
+            {/* Informações do usuário */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary-200 rounded-full flex items-center justify-center text-primary-800 text-sm font-medium">{user?.name ? user.name[0] : '?'}</div>
+              <div className="text-sm text-gray-800 dark:text-gray-200">
+                <p className="font-medium">{user?.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.role === 'admin' ? 'Administrador' : 'Cliente'}</p>
+              </div>
             </div>
+            
+            {/* Toggle Tema */}
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="w-full justify-start hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <span className="ml-3">Tema {isDark ? 'Claro' : 'Escuro'}</span>
+            </Button>
+            
+            {/* Botão Sair */}
+            <Button
+              variant="ghost"
               size="sm"
               onClick={logout}
-              className="w-full mt-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
             >
-              Sair
+              <LogOut className="w-4 h-4" />
+              <span className="ml-3">Sair</span>
             </Button>
           </div>
         )}
+        
+        {/* Divisor */}
+        <Separator className="my-2" />
+        
+        {/* Rodapé customizado */}
+        <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2">
+          <p>Agência SA2Marketing©</p>
+          <p>Versão: BetaV1</p>
+        </div>
       </div>
     </div>
   );

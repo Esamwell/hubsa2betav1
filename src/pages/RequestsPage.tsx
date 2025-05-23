@@ -38,6 +38,7 @@ import {
   FileText,
   Calendar,
   CalendarIcon,
+  X
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -106,6 +107,8 @@ const RequestsPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [openDetails, setOpenDetails] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -146,8 +149,8 @@ const RequestsPage = () => {
         .order('created_at', { ascending: false });
 
       // If user is a client, only fetch their requests
-      if (user?.role === 'client' && user.clientId) {
-        requestsQuery = requestsQuery.eq('client_id', user.clientId);
+      if (user?.role === 'client' && user.client_id) {
+        requestsQuery = requestsQuery.eq('client_id', user.client_id);
       }
 
       const { data: requestsData, error: requestsError } = await requestsQuery;
@@ -244,6 +247,126 @@ const RequestsPage = () => {
   };
 
   const pageTitle = user?.role === 'client' ? 'Minhas Solicitações' : 'Solicitações';
+
+  const handleOpenDetails = (request: Request) => {
+    setSelectedRequest(request);
+    setOpenDetails(true);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedRequest(null);
+    setOpenDetails(false);
+  };
+
+  const handleUpdateRequest = async (values: Partial<Request>) => {
+    if (!selectedRequest) return;
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData(document.getElementById(`request-details-form-${selectedRequest.id}`) as HTMLFormElement);
+
+      const updatedValues: Partial<Request> = {
+        title: formData.get('title') as string,
+        type: formData.get('type') as string,
+        description: formData.get('description') as string || null,
+        status: formData.get('status') as string,
+      };
+
+      // Lidar com a data de entrega explicitamente
+      const formDueDateString = formData.get('due_date') as string;
+      const originalDueDateString = selectedRequest.due_date ? format(new Date(selectedRequest.due_date), 'yyyy-MM-dd') : ''; // Formato do input date
+
+      // Incluir due_date na atualização apenas se for alterada ou se for limpa
+      if (formDueDateString !== originalDueDateString) {
+          if (formDueDateString) {
+              // Se o valor no formulário é diferente do original e não está vazio, atualiza para o novo valor
+               updatedValues.due_date = new Date(formDueDateString).toISOString();
+           } else {
+              // Se o valor no formulário é diferente do original e está vazio, define como null (removendo a data)
+              updatedValues.due_date = null;
+          }
+      }
+      // Se formDueDateString === originalDueDateString, não adicionamos due_date a updatedValues, preservando o valor existente no DB.
+
+
+      // Adiciona client_id apenas se for admin
+        if (user?.role === 'admin') {
+         updatedValues.client_id = formData.get('client_id') as string;
+      }
+
+      // Verificar se há actually any changes to avoid unnecessary updates
+      // (Opcional, mas boa prática)
+      const hasChanges = Object.keys(updatedValues).some(key => {
+          // Comparação básica, pode precisar ser mais robusta para objetos aninhados ou datas
+          // Para datas, já tratamos acima, então esta verificação seria mais para outros campos
+          if (key === 'due_date') {
+              // Já tratamos a lógica da data acima, não precisamos comparar aqui novamente
+              return false;
+          }
+           // Comparar outros campos lidos do formulário com os valores originais
+          // Nota: formData.get() retorna string, selectedRequest[key] pode ter outro tipo
+          // Seria ideal comparar os valores no mesmo formato ou usar um estado local para o formulário
+          // Para simplificar agora, focaremos apenas na lógica da data já implementada.
+          return false; // Manter como false por enquanto para não complicar a comparação de outros campos
+      });
+
+      // Se formDueDateString !== originalDueDateString, due_date já foi adicionado a updatedValues.
+      // Se formDueDateString === originalDueDateString, updatedValues.due_date não existe, preservando o DB value.
+
+      // Se não houver outras mudanças e a data não foi alterada/removida, não faz a chamada ao Supabase
+      if (Object.keys(updatedValues).length === 0) {
+           console.log("Nenhuma alteração detectada, cancelando atualização.");
+           setLoading(false);
+           setOpenDetails(false);
+           return; // Sai da função se não houver alterações
+      }
+
+
+      const { data, error } = await supabase
+        .from('requests')
+        .update(updatedValues)
+        .eq('id', selectedRequest.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Solicitação atualizada",
+        description: "As alterações foram salvas com sucesso.",
+      });
+
+      setOpenDetails(false);
+      fetchData(); // Recarregar dados para refletir a mudança
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar solicitação:', error);
+      toast({ title: 'Erro', description: error.message || 'Não foi possível atualizar a solicitação.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRequest = async () => {
+    if (!selectedRequest) return;
+    try {
+      const { error } = await supabase
+        .from('requests')
+        .delete()
+        .eq('id', selectedRequest.id);
+      if (error) throw error;
+
+      toast({ title: 'Solicitação excluída', description: 'A solicitação foi removida.' });
+      fetchData(); // Atualiza a lista
+      handleCloseDetails();
+    } catch (error: any) {
+      console.error('Erro ao excluir solicitação:', error);
+      toast({ title: 'Erro', description: error.message || 'Não foi possível excluir a solicitação.', variant: 'destructive' });
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -479,7 +602,7 @@ const RequestsPage = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenDetails(request)}>
                           Ver detalhes
                         </Button>
                       </TableCell>
@@ -491,6 +614,147 @@ const RequestsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de detalhes da solicitação */}
+      <Dialog open={openDetails} onOpenChange={setOpenDetails}>
+        <DialogContent className="sm:max-w-3xl p-6">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Solicitação</DialogTitle>
+            <DialogDescription>Visualize e edite os detalhes da solicitação.</DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <form id={`request-details-form-${selectedRequest.id}`} onSubmit={(e) => {
+              e.preventDefault();
+              // Coletar dados do formulário manualmente ou usar react-hook-form se integrado
+              const formData = new FormData(e.currentTarget);
+              const updatedValues: Partial<Request> = {
+                title: formData.get('title') as string,
+                type: formData.get('type') as string,
+                description: formData.get('description') as string || null,
+                status: formData.get('status') as string,
+              };
+
+              const formDueDateString = formData.get('due_date') as string;
+              const originalDueDateString = selectedRequest.due_date ? format(new Date(selectedRequest.due_date), 'yyyy-MM-dd') : '';
+
+              if (formDueDateString !== originalDueDateString) {
+                  if (formDueDateString) {
+                      updatedValues.due_date = new Date(formDueDateString).toISOString();
+                   } else {
+                      updatedValues.due_date = null;
+                  }
+              }
+
+               if (user?.role === 'admin') {
+                updatedValues.client_id = formData.get('client_id') as string;
+             }
+              
+              handleUpdateRequest(updatedValues);
+            }}>
+              {/* Seção de Informações Principais */}
+              <div className="space-y-6 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Informações Principais</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="title">Título</Label>
+                      <Input id="title" name="title" defaultValue={selectedRequest.title} required readOnly={user?.role !== 'admin'} className="mt-1" />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="type">Tipo</Label>
+                      <Select name="type" defaultValue={selectedRequest.type} onValueChange={(value) => {
+                          // Atualizar o valor do formulário manualmente ou usar estado
+                      }} disabled={user?.role !== 'admin'}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {requestTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                   </div>
+
+                   {user?.role === 'admin' && ( // Campo cliente apenas para admin
+                    <div>
+                      <Label htmlFor="client_id">Cliente</Label>
+                      <Select name="client_id" defaultValue={selectedRequest.client_id} onValueChange={(value) => {
+                        // Atualizar o valor do formulário manualmente ou usar estado
+                    }}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Selecione o cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                   )}
+                 </div>
+              </div>
+
+              {/* Seção de Detalhes Adicionais */}
+              <div className="space-y-6 mb-6">
+                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Detalhes Adicionais</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="due_date">Data de Entrega</Label>
+                      <Input type="date" id="due_date" name="due_date" defaultValue={selectedRequest.due_date ? format(new Date(selectedRequest.due_date), 'yyyy-MM-dd') : ''} readOnly={user?.role !== 'admin'} className="mt-1" />
+                    </div>
+
+                     {user?.role === 'admin' && ( // Campo status apenas para admin
+                      <div>
+                        <Label htmlFor="status">Status</Label>
+                        <Select name="status" defaultValue={selectedRequest.status} onValueChange={(value) => {
+                          // Atualizar o valor do formulário manualmente ou usar estado
+                          // Você pode usar um estado local para controlar isso se necessário
+                      }}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['pending', 'in-progress', 'completed', 'cancelled'].map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status === 'pending' ? 'Pendente' :
+                                 status === 'in-progress' ? 'Em andamento' :
+                                 status === 'completed' ? 'Concluído' :
+                                 'Cancelado'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                         </div>
+                       )}
+                 </div>
+
+                <div>
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea id="description" name="description" defaultValue={selectedRequest.description || ''} className="resize-none min-h-[150px] mt-1" readOnly={user?.role !== 'admin'} />
+                </div>
+              </div>
+
+               {/* Botões de ação */}
+               {user?.role === 'admin' && (
+                 <DialogFooter className="pt-4">
+                   <Button type="button" variant="destructive" onClick={handleDeleteRequest}>Excluir</Button>
+                   <Button type="submit" variant="default">Salvar Alterações</Button>
+                 </DialogFooter>
+               )}
+            </form>
+          )}
+           {/* Botão de fechar fora do formulário */}
+           <DialogFooter>
+             <Button type="button" variant="outline" onClick={handleCloseDetails}><X className="w-4 h-4" /></Button>
+           </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

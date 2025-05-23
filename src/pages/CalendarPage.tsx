@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -13,62 +12,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Example event data - in a real app, this would come from your database
-const EXAMPLE_EVENTS = [
-  { 
-    id: 1, 
-    title: 'Post para Instagram', 
-    date: new Date(2025, 4, 15), 
-    type: 'post',
-    status: 'scheduled'
-  },
-  { 
-    id: 2, 
-    title: 'Banner para Facebook', 
-    date: new Date(2025, 4, 18), 
-    type: 'design',
-    status: 'pending'
-  },
-  { 
-    id: 3, 
-    title: 'Edição de vídeo', 
-    date: new Date(2025, 4, 20), 
-    type: 'video',
-    status: 'completed'
-  },
-  { 
-    id: 4, 
-    title: 'Story para Instagram', 
-    date: new Date(2025, 4, 25), 
-    type: 'story',
-    status: 'scheduled'
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CalendarPage = () => {
+  const { user } = useAuth();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   const [filter, setFilter] = useState<string>('all');
-  
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      let query = supabase.from('requests').select('*');
+      if (user?.role === 'client' && user.client_id) {
+        query = query.eq('client_id', user.client_id);
+      }
+      const { data, error } = await query;
+      if (!error && data) {
+        setEvents(data.map(ev => ({
+          ...ev,
+          date: ev.due_date ? new Date(ev.due_date) : null
+        })));
+      }
+    };
+    fetchEvents();
+  }, [user]);
+
   // Filter events based on the selected date and filter option
-  const filteredEvents = EXAMPLE_EVENTS.filter(event => {
+  const filteredEvents = events.filter(event => {
     // Filter by date if in calendar view and a date is selected
-    const dateMatches = !date || 
-      (event.date.getDate() === date.getDate() && 
-       event.date.getMonth() === date.getMonth() && 
-       event.date.getFullYear() === date.getFullYear());
-       
+    const dateMatches = !date ||
+      (event.date && event.date.getDate() === date.getDate() &&
+        event.date.getMonth() === date.getMonth() &&
+        event.date.getFullYear() === date.getFullYear());
     // Filter by type/status
-    const typeMatches = filter === 'all' || 
-                        event.type === filter || 
-                        event.status === filter;
-                        
+    const typeMatches = filter === 'all' ||
+      event.type === filter ||
+      event.status === filter;
     return dateMatches && typeMatches;
   });
 
   const displayDate = date ? format(date, "MMMM yyyy", { locale: ptBR }) : '';
-  
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -78,7 +64,6 @@ const CalendarPage = () => {
             Visualize e gerencie as atividades e prazos
           </p>
         </div>
-        
         <div className="flex flex-wrap gap-2">
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-[120px]">
@@ -94,17 +79,16 @@ const CalendarPage = () => {
               <SelectItem value="completed">Concluídos</SelectItem>
             </SelectContent>
           </Select>
-          
           <div className="flex space-x-1">
-            <Button 
-              variant={view === 'calendar' ? 'default' : 'outline'} 
+            <Button
+              variant={view === 'calendar' ? 'default' : 'outline'}
               onClick={() => setView('calendar')}
               size="sm"
             >
               <CalendarIcon className="h-4 w-4 mr-1" /> Calendário
             </Button>
-            <Button 
-              variant={view === 'list' ? 'default' : 'outline'} 
+            <Button
+              variant={view === 'list' ? 'default' : 'outline'}
               onClick={() => setView('list')}
               size="sm"
             >
@@ -113,7 +97,6 @@ const CalendarPage = () => {
           </div>
         </div>
       </div>
-      
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Calendar section */}
         {view === 'calendar' && (
@@ -142,7 +125,6 @@ const CalendarPage = () => {
                 />
               </CardContent>
             </Card>
-            
             {/* Events for selected date */}
             <div className="xl:col-span-8">
               <Card>
@@ -166,17 +148,17 @@ const CalendarPage = () => {
                           <div className="flex-1">
                             <h3 className="font-medium">{event.title}</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {format(event.date, "dd/MM/yyyy")}
+                              {event.date ? format(event.date, "dd/MM/yyyy") : ''}
                             </p>
                           </div>
                           <div>
                             <span className={`text-xs px-2 py-1 rounded-full ${
-                              event.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
-                              event.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 
-                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                            }`}>
-                              {event.status === 'completed' ? 'Concluído' : 
-                               event.status === 'scheduled' ? 'Agendado' : 'Pendente'}
+                              event.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                event.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              }`}>
+                              {event.status === 'completed' ? 'Concluído' :
+                                event.status === 'scheduled' ? 'Agendado' : 'Pendente'}
                             </span>
                           </div>
                         </div>
@@ -188,7 +170,6 @@ const CalendarPage = () => {
             </div>
           </>
         )}
-        
         {/* List view */}
         {view === 'list' && (
           <Card className="col-span-full">
@@ -205,29 +186,29 @@ const CalendarPage = () => {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {filteredEvents.sort((a, b) => a.date.getTime() - b.date.getTime()).map(event => (
+                  {filteredEvents.sort((a, b) => a.date?.getTime() - b.date?.getTime()).map(event => (
                     <div key={event.id} className="flex items-center p-3 rounded-lg border bg-white dark:bg-gray-800">
                       <div className="flex-1">
                         <h3 className="font-medium">{event.title}</h3>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {format(event.date, "dd/MM/yyyy")}
+                            {event.date ? format(event.date, "dd/MM/yyyy") : ''}
                           </span>
                           <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                            {event.type === 'post' ? 'Post' : 
-                             event.type === 'design' ? 'Design' :
-                             event.type === 'video' ? 'Vídeo' : 'Story'}
+                            {event.type === 'post' ? 'Post' :
+                              event.type === 'design' ? 'Design' :
+                                event.type === 'video' ? 'Vídeo' : 'Outro'}
                           </span>
                         </div>
                       </div>
                       <div>
                         <span className={`text-xs px-2 py-1 rounded-full ${
-                          event.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
-                          event.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 
-                          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        }`}>
-                          {event.status === 'completed' ? 'Concluído' : 
-                           event.status === 'scheduled' ? 'Agendado' : 'Pendente'}
+                          event.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                            event.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          }`}>
+                          {event.status === 'completed' ? 'Concluído' :
+                            event.status === 'scheduled' ? 'Agendado' : 'Pendente'}
                         </span>
                       </div>
                     </div>
