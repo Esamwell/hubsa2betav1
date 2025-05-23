@@ -68,7 +68,7 @@ const Login = () => {
 
           <CardHeader className="text-center pb-6">
             <div className="mx-auto w-64 h-64 flex items-center justify-center">
-              <img src="/src/images/logosa2hub.png" alt="Logo HubSA2" className="w-full h-full object-contain" />
+              <img src="/images/logosa2hub.png" alt="Logo HubSA2" className="w-full h-full object-contain" />
             </div>
             
             
