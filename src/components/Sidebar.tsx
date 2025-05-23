@@ -52,11 +52,21 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
       {/* Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between w-full">
+          {/* Adicionando a Logo */}
+          {!isCollapsed && (
+            <Link to="/" className="flex items-center">
+              <img
+                src="/images/logosa2hub.png"
+                alt="Logo SA2Hub"
+                className="h-8 w-auto"
+              />
+            </Link>
+          )}
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggle}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden"
           >
             <Menu className="w-4 h-4" />
           </Button>
