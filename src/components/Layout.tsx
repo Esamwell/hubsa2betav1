@@ -28,7 +28,7 @@ const Layout = () => {
       )}
 
       {/* Conteúdo principal */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out`}>
         <Topbar onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)} /> {/* Passar função para toggle */}
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 md:p-6">
