@@ -137,4 +137,4 @@ Explore as funcionalidades do Hubsa2:
 *   **Detalhes da Solicitação:** Veja informações detalhadas e edite solicitações específicas (as permissões de edição dependem do seu perfil). 🔍
 *   **Nova Solicitação:** Crie novas solicitações para iniciar o processo de trabalho. ✨
 
-*(Por favor, ajuste as seções de Uso e Instalação conforme as particularidades e rotas específicas do seu projeto.)*
+l
