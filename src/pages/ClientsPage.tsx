@@ -440,10 +440,8 @@ const ClientsPage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
             </div>
           ) : filteredClients.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-gray-500 dark:text-gray-400">
-                Nenhum cliente encontrado
-              </p>
+            <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+              Nenhum cliente encontrado.
             </div>
           ) : (
             <div className="overflow-x-auto">

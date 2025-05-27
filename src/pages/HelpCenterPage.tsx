@@ -202,7 +202,7 @@ const HelpCenterPage = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Entenda a visão geral do sistema.</p>
               </div>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
               {renderGuideContent('dashboard-guide')}
             </DialogContent>
           </Dialog>
@@ -223,7 +223,7 @@ const HelpCenterPage = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Como criar e acompanhar suas solicitações.</p>
               </div>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
               {renderGuideContent('solicitacoes-guide')}
             </DialogContent>
           </Dialog>
@@ -244,7 +244,7 @@ const HelpCenterPage = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Visualize seus compromissos e prazos.</p>
               </div>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
               {renderGuideContent('calendario-guide')}
             </DialogContent>
           </Dialog>
@@ -266,7 +266,7 @@ const HelpCenterPage = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400">Ajuste suas preferências e perfil.</p>
               </div>
             </DialogTrigger>
-             <DialogContent>
+             <DialogContent className="sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
               {renderGuideContent('configuracoes-guide')}
             </DialogContent>
           </Dialog>
