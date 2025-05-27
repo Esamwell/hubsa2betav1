@@ -118,7 +118,7 @@ const Login = () => {
           </form>
           
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-8">
-            © 2024 SA2 Marketing - Todos os direitos reservados | Versão: BetaV1
+            © 2025 SA2 Marketing - Todos os direitos reservados | Versão: BetaV1
           </div>
         </div>
       </div>
