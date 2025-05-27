@@ -36,7 +36,6 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     { title: 'Calendário', path: '/admin/calendar', icon: Calendar },
     { title: 'Configurações', path: '/admin/settings', icon: Settings },
     { title: 'Central de Ajuda', path: '/help', icon: HelpCircle },
-    { title: 'Logs de Auditoria', path: '/admin/logs', icon: Clock },
   ];
 
   const clientMenuItems = [
