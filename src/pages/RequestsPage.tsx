@@ -89,7 +89,7 @@ const formSchema = z.object({
   title: z.string().min(2, { message: "Título deve ter pelo menos 2 caracteres" }),
   description: z.string().optional(),
   type: z.string().min(1, { message: "Selecione um tipo de solicitação" }),
-  client_id: z.string().uuid({ message: "Cliente inválido" }),
+  client_id: z.string().uuid({ message: "Cliente inválido" }).optional(),
   due_date: z.date().optional(),
 });
 
@@ -112,13 +112,17 @@ const RequestsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
+  // Novos estados para filtros
+  const [filterType, setFilterType] = useState<string | undefined>(undefined);
+  const [filterStatus, setFilterStatus] = useState<string | undefined>(undefined);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
       type: "",
-      client_id: "",
+      client_id: user?.role === 'admin' ? "" : undefined,
     },
   });
 
@@ -148,9 +152,24 @@ const RequestsPage = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // If user is a client, only fetch their requests
+      // Se usuário for cliente, filtrar por client_id
       if (user?.role === 'client' && user.client_id) {
         requestsQuery = requestsQuery.eq('client_id', user.client_id);
+      }
+
+      // Aplicar filtros de tipo e status, se selecionados
+      if (filterType) {
+        requestsQuery = requestsQuery.eq('type', filterType);
+      }
+      if (filterStatus) {
+        requestsQuery = requestsQuery.eq('status', filterStatus);
+      }
+
+      // Aplicar filtro de busca no título, tipo ou nome do cliente (case-insensitive)
+      if (searchTerm) {
+           requestsQuery = requestsQuery.or(
+            `title.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%,clients.name.ilike.%${searchTerm}%`
+           );
       }
 
       const { data: requestsData, error: requestsError } = await requestsQuery;
@@ -175,25 +194,28 @@ const RequestsPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user]);
-
-  const filteredRequests = requests.filter(request => 
-    request.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    request.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (request.clients?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  }, [user, filterType, filterStatus]);
 
   const handleCreateRequest = async (values: z.infer<typeof formSchema>) => {
     try {
+      console.log('Valores do formulário:', values);
+      console.log('Usuário logado:', user);
+      // Adiciona o client_id do usuário logado se ele for um cliente
+      const requestData = user?.role === 'client' && user.client_id
+        ? { ...values, client_id: user.client_id } // Inclui client_id para clientes
+        : values; // Usa valores originais para admins (onde o campo client_id existe no form)
+
+      console.log('Dados da solicitação para inserção:', requestData);
+
       const { data, error } = await supabase
         .from('requests')
         .insert([
           { 
-            title: values.title, 
-            description: values.description || null,
-            type: values.type,
-            client_id: values.client_id,
-            due_date: values.due_date ? values.due_date.toISOString() : null,
+            title: requestData.title, 
+            description: requestData.description || null,
+            type: requestData.type,
+            client_id: requestData.client_id,
+            due_date: requestData.due_date ? requestData.due_date.toISOString() : null,
           }
         ])
         .select();
@@ -396,7 +418,12 @@ const RequestsPage = () => {
             </DialogHeader>
             
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleCreateRequest)} className="space-y-4 py-4">
+              <form onSubmit={form.handleSubmit(
+                handleCreateRequest,
+                (errors) => { // Adiciona um handler para erros de validação
+                  console.error('Erros de validação do formulário:', JSON.stringify(errors, null, 2));
+                }
+              )} className="space-y-4 py-4">
                 <FormField
                   control={form.control}
                   name="title"
@@ -535,7 +562,7 @@ const RequestsPage = () => {
           <div>
             <CardTitle>Lista de Solicitações</CardTitle>
             <CardDescription>
-              {filteredRequests.length} solicitações encontradas
+              {requests.length} solicitações encontradas
             </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -548,13 +575,43 @@ const RequestsPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
+            {/* Dropdown de Filtro por Tipo */}
+            <Select onValueChange={setFilterType} value={filterType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={undefined}>Todos os Tipos</SelectItem>
+                {requestTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Dropdown de Filtro por Status */}
+            <Select onValueChange={setFilterStatus} value={filterStatus}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por Status" />
+              </SelectTrigger>
+              <SelectContent>
+                 <SelectItem value={undefined}>Todos os Status</SelectItem>
+                 {['pending', 'in-progress', 'completed', 'cancelled'].map((status) => (
+                   <SelectItem key={status} value={status}>
+                     {status === 'pending' ? 'Pendente' :
+                      status === 'in-progress' ? 'Em andamento' :
+                      status === 'completed' ? 'Concluído' :
+                      'Cancelado'}
+                   </SelectItem>
+                 ))}
+              </SelectContent>
+            </Select>
+
             <Button variant="outline" size="sm" onClick={() => fetchData()}>
               <RefreshCw className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:ml-2">Atualizar</span>
-            </Button>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4" />
-              <span className="sr-only sm:not-sr-only sm:ml-2">Filtrar</span>
             </Button>
           </div>
         </CardHeader>
@@ -563,7 +620,7 @@ const RequestsPage = () => {
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
             </div>
-          ) : filteredRequests.length === 0 ? (
+          ) : requests.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-gray-500 dark:text-gray-400">
                 Nenhuma solicitação encontrada
@@ -583,7 +640,7 @@ const RequestsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRequests.map((request) => (
+                  {requests.map((request) => (
                     <TableRow key={request.id}>
                       <TableCell className="font-medium">{request.title}</TableCell>
                       <TableCell>{getRequestTypeName(request.type)}</TableCell>
