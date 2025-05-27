@@ -706,10 +706,8 @@ const RequestsPage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
             </div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-gray-500 dark:text-gray-400">
-                Nenhuma solicitação encontrada
-              </p>
+            <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+              Nenhuma solicitação encontrada.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -763,7 +761,7 @@ const RequestsPage = () => {
 
       {/* Modal de detalhes da solicitação */}
       <Dialog open={openDetails} onOpenChange={setOpenDetails}>
-        <DialogContent className="sm:max-w-3xl p-6">
+        <DialogContent className="w-full sm:max-w-lg p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary-500" />
