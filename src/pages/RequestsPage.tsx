@@ -77,6 +77,8 @@ type Request = {
     name: string;
     email: string;
   };
+  priority: string;
+  completed_at: string | null;
 };
 
 type Client = {
@@ -91,6 +93,7 @@ const formSchema = z.object({
   type: z.string().min(1, { message: "Selecione um tipo de solicitação" }),
   client_id: z.string().uuid({ message: "Cliente inválido" }).optional(),
   due_date: z.date().optional(),
+  priority: z.string().optional(),
 });
 
 const requestTypes = [
@@ -99,6 +102,12 @@ const requestTypes = [
   { value: "video", label: "Edição de Vídeo" },
   { value: "design", label: "Design Gráfico" },
   { value: "other", label: "Outro" },
+];
+
+const priorities = [
+  { value: "baixa", label: "Baixa" },
+  { value: "media", label: "Média" },
+  { value: "alta", label: "Alta" },
 ];
 
 const RequestsPage = () => {
@@ -115,6 +124,7 @@ const RequestsPage = () => {
   // Novos estados para filtros
   const [filterType, setFilterType] = useState<string | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<string | undefined>(undefined);
+  const [filterPriority, setFilterPriority] = useState<string | undefined>(undefined);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -123,6 +133,7 @@ const RequestsPage = () => {
       description: "",
       type: "",
       client_id: user?.role === 'admin' ? "" : undefined,
+      priority: "media",
     },
   });
 
@@ -157,18 +168,23 @@ const RequestsPage = () => {
         requestsQuery = requestsQuery.eq('client_id', user.client_id);
       }
 
-      // Aplicar filtros de tipo e status, se selecionados
+      // Aplicar filtros de tipo, status e prioridade, se selecionados
       if (filterType) {
         requestsQuery = requestsQuery.eq('type', filterType);
       }
       if (filterStatus) {
         requestsQuery = requestsQuery.eq('status', filterStatus);
       }
+      if (filterPriority) {
+        requestsQuery = requestsQuery.eq('priority', filterPriority);
+      }
 
       // Aplicar filtro de busca no título, tipo ou nome do cliente (case-insensitive)
       if (searchTerm) {
+           // Temporariamente removendo clients.name para depurar
            requestsQuery = requestsQuery.or(
-            `title.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%,clients.name.ilike.%${searchTerm}%`
+            `title.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`
+            //`title.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%,clients.name.ilike.%${searchTerm}%`
            );
       }
 
@@ -194,7 +210,7 @@ const RequestsPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user, filterType, filterStatus]);
+  }, [user, filterType, filterStatus, filterPriority, searchTerm]);
 
   const handleCreateRequest = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -216,6 +232,7 @@ const RequestsPage = () => {
             type: requestData.type,
             client_id: requestData.client_id,
             due_date: requestData.due_date ? requestData.due_date.toISOString() : null,
+            priority: requestData.priority || 'media',
           }
         ])
         .select();
@@ -268,6 +285,20 @@ const RequestsPage = () => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
+  // Função para obter o componente Badge com base na prioridade
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'baixa':
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-700/20 dark:text-gray-300">Baixa</Badge>;
+      case 'media':
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">Média</Badge>;
+      case 'alta':
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">Alta</Badge>;
+      default:
+        return <Badge>{priority}</Badge>;
+    }
+  };
+
   const pageTitle = user?.role === 'client' ? 'Minhas Solicitações' : 'Solicitações';
 
   const handleOpenDetails = (request: Request) => {
@@ -293,6 +324,7 @@ const RequestsPage = () => {
         type: formData.get('type') as string,
         description: formData.get('description') as string || null,
         status: formData.get('status') as string,
+        priority: formData.get('priority') as string,
       };
 
       // Lidar com a data de entrega explicitamente
@@ -311,6 +343,16 @@ const RequestsPage = () => {
       }
       // Se formDueDateString === originalDueDateString, não adicionamos due_date a updatedValues, preservando o valor existente no DB.
 
+      // Lógica para data de conclusão
+      if (selectedRequest.status !== 'completed' && updatedValues.status === 'completed') {
+        // Se o status mudou para concluído, define completed_at para a data/hora atual
+        updatedValues.completed_at = new Date().toISOString();
+      } else if (selectedRequest.status === 'completed' && updatedValues.status !== 'completed') {
+        // Se o status mudou de concluído para outro, remove completed_at
+        updatedValues.completed_at = null;
+      }
+      // Se o status for 'completed' e continuar 'completed', não alteramos completed_at (mantemos a data original de conclusão)
+      // Se o status não for 'completed' e continuar não sendo 'completed', não alteramos completed_at
 
       // Adiciona client_id apenas se for admin
         if (user?.role === 'admin') {
@@ -411,7 +453,10 @@ const RequestsPage = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Nova Solicitação</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary-500" />
+                Nova Solicitação
+              </DialogTitle>
               <DialogDescription>
                 Preencha os dados para criar uma nova solicitação.
               </DialogDescription>
@@ -489,6 +534,31 @@ const RequestsPage = () => {
                     )}
                   />
                 )}
+
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prioridade</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a prioridade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {priorities.map((priority) => (
+                            <SelectItem key={priority.value} value={priority.value}>
+                              {priority.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -609,6 +679,21 @@ const RequestsPage = () => {
               </SelectContent>
             </Select>
 
+            {/* Dropdown de Filtro por Prioridade */}
+            <Select onValueChange={setFilterPriority} value={filterPriority}>
+               <SelectTrigger className="w-[180px]">
+                 <SelectValue placeholder="Filtrar por Prioridade" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value={undefined}>Todas as Prioridades</SelectItem>
+                 {priorities.map((priority) => (
+                   <SelectItem key={priority.value} value={priority.value}>
+                     {priority.label}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+
             <Button variant="outline" size="sm" onClick={() => fetchData()}>
               <RefreshCw className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:ml-2">Atualizar</span>
@@ -633,9 +718,11 @@ const RequestsPage = () => {
                   <TableRow>
                     <TableHead>Título</TableHead>
                     <TableHead>Tipo</TableHead>
+                    <TableHead>Prioridade</TableHead>
                     {user?.role === 'admin' && <TableHead>Cliente</TableHead>}
                     <TableHead>Status</TableHead>
                     <TableHead>Data de Entrega</TableHead>
+                    <TableHead>Concluído Em</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -644,6 +731,7 @@ const RequestsPage = () => {
                     <TableRow key={request.id}>
                       <TableCell className="font-medium">{request.title}</TableCell>
                       <TableCell>{getRequestTypeName(request.type)}</TableCell>
+                      <TableCell>{getPriorityBadge(request.priority)}</TableCell>
                       {user?.role === 'admin' && (
                         <TableCell>{request.clients?.name || '-'}</TableCell>
                       )}
@@ -658,6 +746,7 @@ const RequestsPage = () => {
                           '-'
                         )}
                       </TableCell>
+                      <TableCell>{formatDate(request.completed_at)}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm" onClick={() => handleOpenDetails(request)}>
                           Ver detalhes
@@ -676,7 +765,10 @@ const RequestsPage = () => {
       <Dialog open={openDetails} onOpenChange={setOpenDetails}>
         <DialogContent className="sm:max-w-3xl p-6">
           <DialogHeader>
-            <DialogTitle>Detalhes da Solicitação</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary-500" />
+              Detalhes da Solicitação
+            </DialogTitle>
             <DialogDescription>Visualize e edite os detalhes da solicitação.</DialogDescription>
           </DialogHeader>
           {selectedRequest && (
@@ -689,6 +781,7 @@ const RequestsPage = () => {
                 type: formData.get('type') as string,
                 description: formData.get('description') as string || null,
                 status: formData.get('status') as string,
+                priority: formData.get('priority') as string,
               };
 
               const formDueDateString = formData.get('due_date') as string;
@@ -714,14 +807,14 @@ const RequestsPage = () => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="title">Título</Label>
-                      <Input id="title" name="title" defaultValue={selectedRequest.title} required readOnly={user?.role !== 'admin'} className="mt-1" />
+                      <Input id="title" name="title" defaultValue={selectedRequest.title} required className="mt-1" />
                     </div>
 
                     <div>
                       <Label htmlFor="type">Tipo</Label>
                       <Select name="type" defaultValue={selectedRequest.type} onValueChange={(value) => {
                           // Atualizar o valor do formulário manualmente ou usar estado
-                      }} disabled={user?.role !== 'admin'}>
+                      }}>
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Selecione o tipo" />
                         </SelectTrigger>
@@ -763,7 +856,7 @@ const RequestsPage = () => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="due_date">Data de Entrega</Label>
-                      <Input type="date" id="due_date" name="due_date" defaultValue={selectedRequest.due_date ? format(new Date(selectedRequest.due_date), 'yyyy-MM-dd') : ''} readOnly={user?.role !== 'admin'} className="mt-1" />
+                      <Input type="date" id="due_date" name="due_date" defaultValue={selectedRequest.due_date ? format(new Date(selectedRequest.due_date), 'yyyy-MM-dd') : ''} className="mt-1" />
                     </div>
 
                      {user?.role === 'admin' && ( // Campo status apenas para admin
@@ -789,21 +882,41 @@ const RequestsPage = () => {
                         </Select>
                          </div>
                        )}
+
+                   {/* Campo de Prioridade nos Detalhes (visível para admin e cliente)*/}
+                   <div>
+                     <Label htmlFor="priority">Prioridade</Label>
+                       <Select name="priority" defaultValue={selectedRequest.priority} onValueChange={(value) => {
+                       // Pode atualizar um estado local se necessário
+                     }}>
+                       <SelectTrigger className="mt-1">
+                         <SelectValue placeholder="Selecione a prioridade" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {priorities.map((priority) => (
+                           <SelectItem key={priority.value} value={priority.value}>
+                             {priority.label}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
                  </div>
 
                 <div>
                   <Label htmlFor="description">Descrição</Label>
-                  <Textarea id="description" name="description" defaultValue={selectedRequest.description || ''} className="resize-none min-h-[150px] mt-1" readOnly={user?.role !== 'admin'} />
+                  <Textarea id="description" name="description" defaultValue={selectedRequest.description || ''} className="resize-none min-h-[150px] mt-1" />
                 </div>
               </div>
 
                {/* Botões de ação */}
-               {user?.role === 'admin' && (
-                 <DialogFooter className="pt-4">
+               <DialogFooter className="pt-4">
+                 {user?.role === 'admin' && (
                    <Button type="button" variant="destructive" onClick={handleDeleteRequest}>Excluir</Button>
-                   <Button type="submit" variant="default">Salvar Alterações</Button>
-                 </DialogFooter>
-               )}
+                 )}
+                 {selectedRequest && <Button type="submit" variant="default">Salvar Alterações</Button>}
+               </DialogFooter>
+
             </form>
           )}
            {/* Botão de fechar fora do formulário */}

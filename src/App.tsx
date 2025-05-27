@@ -14,7 +14,7 @@ import CalendarPage from "@/pages/CalendarPage";
 import SettingsPage from "@/pages/SettingsPage";
 import ClientsPage from "@/pages/ClientsPage";
 import RequestsPage from "@/pages/RequestsPage";
-import NotFound from "./pages/NotFound";
+import NotFound from "@/pages/NotFound";
 import HelpCenterPage from "@/pages/HelpCenterPage";
 
 const queryClient = new QueryClient();

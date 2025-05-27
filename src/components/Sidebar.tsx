@@ -12,7 +12,8 @@ import {
   Settings,
   Bell as BellIcon,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -34,7 +35,8 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     { title: 'Solicitações', path: '/admin/requests', icon: Bell },
     { title: 'Calendário', path: '/admin/calendar', icon: Calendar },
     { title: 'Configurações', path: '/admin/settings', icon: Settings },
-    { title: 'Central de Ajuda', path: '/help', icon: HelpCircle }
+    { title: 'Central de Ajuda', path: '/help', icon: HelpCircle },
+    { title: 'Logs de Auditoria', path: '/admin/logs', icon: Clock },
   ];
 
   const clientMenuItems = [
