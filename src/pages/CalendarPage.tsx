@@ -123,8 +123,9 @@ const CalendarPage = () => {
                   selected={date}
                   onSelect={setDate}
                   locale={ptBR}
-                  className="p-3 pointer-events-auto"
+                  className="p-3 pointer-events-auto w-full"
                   classNames={{
+                    root: "w-full",
                     day_today: "bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300",
                     day_selected: "bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
                   }}
