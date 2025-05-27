@@ -96,6 +96,25 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground min-h-screen;
+  }
+}
+
+@layer utilities {
+  .responsive-container {
+    @apply w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .responsive-text {
+    @apply text-base sm:text-lg;
+  }
+  
+  .responsive-padding {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  /* Estilo para datas com eventos no calendário */
+  .day_event {
+    @apply relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:rounded-full after:bg-primary-500;
   }
 }

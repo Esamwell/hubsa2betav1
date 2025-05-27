@@ -5,12 +5,15 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  datesWithEvents?: Date[];
+};
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  datesWithEvents,
   ...props
 }: CalendarProps) {
   return (
@@ -54,6 +57,12 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+      }}
+      modifiers={{
+        event: datesWithEvents,
+      }}
+      modifiersClassNames={{
+        event: "day_event",
       }}
       {...props}
     />

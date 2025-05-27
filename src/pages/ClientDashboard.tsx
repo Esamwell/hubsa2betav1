@@ -254,7 +254,7 @@ const ClientDashboard = () => {
                 ))
               )}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button variant="outline" className="w-full mt-4" onClick={() => navigate('/client/calendar')}>
               Ver Calendário Completo
             </Button>
           </CardContent>

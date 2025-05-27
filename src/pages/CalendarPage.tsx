@@ -21,6 +21,7 @@ const CalendarPage = () => {
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   const [filter, setFilter] = useState<string>('all');
   const [events, setEvents] = useState<any[]>([]);
+  const [datesWithEvents, setDatesWithEvents] = useState<Date[]>([]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -34,6 +35,11 @@ const CalendarPage = () => {
           ...ev,
           date: ev.due_date ? new Date(ev.due_date) : null
         })));
+        // Extract dates with events
+        const dates = data
+          .filter(ev => ev.due_date)
+          .map(ev => new Date(ev.due_date));
+        setDatesWithEvents(dates);
       }
     };
     fetchEvents();
@@ -122,6 +128,7 @@ const CalendarPage = () => {
                     day_today: "bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300",
                     day_selected: "bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
                   }}
+                  datesWithEvents={datesWithEvents}
                 />
               </CardContent>
             </Card>
