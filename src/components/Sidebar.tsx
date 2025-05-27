@@ -11,7 +11,8 @@ import {
   User,
   Settings,
   Bell as BellIcon,
-  LogOut
+  LogOut,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,14 +33,16 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     { title: 'Clientes', path: '/admin/clients', icon: User },
     { title: 'Solicitações', path: '/admin/requests', icon: Bell },
     { title: 'Calendário', path: '/admin/calendar', icon: Calendar },
-    { title: 'Configurações', path: '/admin/settings', icon: Settings }
+    { title: 'Configurações', path: '/admin/settings', icon: Settings },
+    { title: 'Central de Ajuda', path: '/help', icon: HelpCircle }
   ];
 
   const clientMenuItems = [
     { title: 'Dashboard', path: '/client', icon: Calendar },
     { title: 'Solicitações', path: '/client/requests', icon: Bell },
     { title: 'Calendário', path: '/client/calendar', icon: Calendar },
-    { title: 'Configurações', path: '/client/settings', icon: Settings }
+    { title: 'Configurações', path: '/client/settings', icon: Settings },
+    { title: 'Central de Ajuda', path: '/help', icon: HelpCircle }
   ];
 
   const menuItems = user?.role === 'admin' ? adminMenuItems : clientMenuItems;

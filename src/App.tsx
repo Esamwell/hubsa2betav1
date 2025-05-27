@@ -15,6 +15,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import ClientsPage from "@/pages/ClientsPage";
 import RequestsPage from "@/pages/RequestsPage";
 import NotFound from "./pages/NotFound";
+import HelpCenterPage from "@/pages/HelpCenterPage";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,9 @@ const App = () => (
                     <SettingsPage />
                   </ProtectedRoute>
                 } />
+                
+                {/* Help Center Route */}
+                <Route path="/help" element={<HelpCenterPage />} />
                 
                 {/* Client Routes */}
                 <Route path="/client" element={
